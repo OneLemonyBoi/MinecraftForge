@@ -36,14 +36,10 @@ public class CapabilityFluidHandler
 {
     @CapabilityInject(IFluidHandler.class)
     public static Capability<IFluidHandler> FLUID_HANDLER_CAPABILITY = null;
-    @CapabilityInject(IFluidHandlerItem.class)
-    public static Capability<IFluidHandlerItem> FLUID_HANDLER_ITEM_CAPABILITY = null;
 
     public static void register()
     {
         CapabilityManager.INSTANCE.register(IFluidHandler.class, new DefaultFluidHandlerStorage<>(), () -> new FluidTank(FluidAttributes.BUCKET_VOLUME));
-
-        CapabilityManager.INSTANCE.register(IFluidHandlerItem.class, new DefaultFluidHandlerStorage<>(), () -> new FluidHandlerItemStack(new ItemStack(Items.BUCKET), FluidAttributes.BUCKET_VOLUME));
     }
 
     private static class DefaultFluidHandlerStorage<T extends IFluidHandler> implements Capability.IStorage<T> {
@@ -54,8 +50,7 @@ public class CapabilityFluidHandler
                 throw new RuntimeException("Cannot serialize to an instance that isn't the default implementation");
             CompoundNBT nbt = new CompoundNBT();
             FluidTank tank = (FluidTank) instance;
-            FluidStack fluid = tank.getFluid();
-            fluid.writeToNBT(nbt);
+            tank.writeToNBT(nbt);
             nbt.putInt("Capacity", tank.getCapacity());
             return nbt;
         }
@@ -67,8 +62,8 @@ public class CapabilityFluidHandler
                 throw new RuntimeException("Cannot deserialize to an instance that isn't the default implementation");
             CompoundNBT tags = (CompoundNBT) nbt;
             FluidTank tank = (FluidTank) instance;
-            tank.setCapacity(tags.getInt("Capacity"));
             tank.readFromNBT(tags);
+            tank.setCapacity(tags.getInt("Capacity"));
         }
     }
 }

@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
 
 public class TileFluidHandler extends TileEntity
 {
-    protected FluidTank tank = new FluidTank(FluidAttributes.BUCKET_VOLUME);
+    protected FluidTank tank = new FluidTank(FluidAttributes.BUCKET_VOLUME, IFluidHandler.HandlerType.BLOCK);
     
     private final LazyOptional<IFluidHandler> holder = LazyOptional.of(() -> tank);
 

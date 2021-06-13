@@ -44,6 +44,20 @@ public interface IFluidHandler
         }
     }
 
+    enum HandlerType {
+        ITEM, BLOCK;
+
+        public boolean item() {
+            return this == ITEM;
+        }
+
+        public boolean block() {
+            return this == BLOCK;
+        }
+    }
+
+    HandlerType getType();
+
     /**
      * Returns the number of fluid storage units ("tanks") available
      *
@@ -94,9 +108,11 @@ public interface IFluidHandler
      *
      * @param resource FluidStack representing the Fluid and maximum amount of fluid to be filled.
      * @param action   If SIMULATE, fill will only be simulated.
-     * @return Amount of resource that was (or would have been, if simulated) filled.
+     * @return Amount of resource that was (or would have been, if simulated) filled, and if item, includes new ItemStack.
      */
-    int fill(FluidStack resource, FluidAction action);
+    int fillBlock(FluidStack resource, FluidAction action);
+
+    FluidResult fillItem(FluidStack resource, FluidAction action);
 
     /**
      * Drains fluid out of internal tanks, distribution is left entirely to the IFluidHandler.
@@ -104,10 +120,13 @@ public interface IFluidHandler
      * @param resource FluidStack representing the Fluid and maximum amount of fluid to be drained.
      * @param action   If SIMULATE, drain will only be simulated.
      * @return FluidStack representing the Fluid and amount that was (or would have been, if
-     * simulated) drained.
+     * simulated) drained, and if item, includes new ItemStack.
      */
     @Nonnull
-    FluidStack drain(FluidStack resource, FluidAction action);
+    FluidStack drainBlock(FluidStack resource, FluidAction action);
+
+    @Nonnull
+    FluidResult drainItem(FluidStack resource, FluidAction action);
 
     /**
      * Drains fluid out of internal tanks, distribution is left entirely to the IFluidHandler.
@@ -117,9 +136,11 @@ public interface IFluidHandler
      * @param maxDrain Maximum amount of fluid to drain.
      * @param action   If SIMULATE, drain will only be simulated.
      * @return FluidStack representing the Fluid and amount that was (or would have been, if
-     * simulated) drained.
+     * simulated) drained, and if item, includes new ItemStack.
      */
     @Nonnull
-    FluidStack drain(int maxDrain, FluidAction action);
+    FluidStack drainBlock(int maxDrain, FluidAction action);
 
+    @Nonnull
+    FluidResult drainItem(int maxDrain, FluidAction action);
 }

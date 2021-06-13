@@ -19,37 +19,62 @@
 
 package net.minecraftforge.fluids.capability.templates;
 
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidTank;
+import net.minecraftforge.fluids.capability.FluidResult;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
  * Flexible implementation of a Fluid Storage object. NOT REQUIRED.
  *
- * @author King Lemming
+ * @author King Lemming and OneLemonyBoi
  */
-public class FluidTank implements IFluidHandler, IFluidTank {
+public class FluidTank implements IFluidHandler {
 
     protected Predicate<FluidStack> validator;
     @Nonnull
     protected FluidStack fluid = FluidStack.EMPTY;
     protected int capacity;
+    protected HandlerType handlerType;
+    protected Function<FluidResult, ItemStack> stackFunction;
 
     public FluidTank(int capacity)
     {
-        this(capacity, e -> true);
+        this(capacity, e -> true, HandlerType.BLOCK);
     }
 
-    public FluidTank(int capacity, Predicate<FluidStack> validator)
+    public FluidTank(int capacity, HandlerType handlerType)
+    {
+        this(capacity, e -> true, handlerType);
+    }
+
+    public FluidTank(int capacity, Predicate<FluidStack> validator, HandlerType handlerType)
     {
         this.capacity = capacity;
         this.validator = validator;
+        this.handlerType = handlerType;
+        this.stackFunction = FluidResult::getItemStack;
+    }
+
+    public FluidTank(int capacity, Predicate<FluidStack> validator, Function<FluidResult, ItemStack> stackFunction, HandlerType handlerType)
+    {
+        this.capacity = capacity;
+        this.validator = validator;
+        this.handlerType = handlerType;
+        this.stackFunction = stackFunction;
+    }
+
+    public FluidTank(int capacity, Function<FluidResult, ItemStack> stackFunction)
+    {
+        this(capacity, e -> true, stackFunction, HandlerType.ITEM);
     }
 
     public FluidTank setCapacity(int capacity)
@@ -102,6 +127,12 @@ public class FluidTank implements IFluidHandler, IFluidTank {
     }
 
     @Override
+    public HandlerType getType()
+    {
+        return HandlerType.BLOCK;
+    }
+
+    @Override
     public int getTanks() {
 
         return 1;
@@ -127,7 +158,7 @@ public class FluidTank implements IFluidHandler, IFluidTank {
     }
 
     @Override
-    public int fill(FluidStack resource, FluidAction action)
+    public int fillBlock(FluidStack resource, FluidAction action)
     {
         if (resource.isEmpty() || !isFluidValid(resource))
         {
@@ -171,20 +202,33 @@ public class FluidTank implements IFluidHandler, IFluidTank {
         return filled;
     }
 
+    @Override
+    public FluidResult fillItem(FluidStack resource, FluidAction action)
+    {
+        return FluidResult.of(new FluidStack(resource.getFluid(), fillBlock(resource, action)));
+    }
+
     @Nonnull
     @Override
-    public FluidStack drain(FluidStack resource, FluidAction action)
+    public FluidStack drainBlock(FluidStack resource, FluidAction action)
     {
         if (resource.isEmpty() || !resource.isFluidEqual(fluid))
         {
             return FluidStack.EMPTY;
         }
-        return drain(resource.getAmount(), action);
+        return drainBlock(resource.getAmount(), action);
     }
 
     @Nonnull
     @Override
-    public FluidStack drain(int maxDrain, FluidAction action)
+    public FluidResult drainItem(FluidStack resource, FluidAction action)
+    {
+        return FluidResult.of(drainBlock(resource, action));
+    }
+
+    @Nonnull
+    @Override
+    public FluidStack drainBlock(int maxDrain, FluidAction action)
     {
         int drained = maxDrain;
         if (fluid.getAmount() < drained)
@@ -198,6 +242,13 @@ public class FluidTank implements IFluidHandler, IFluidTank {
             onContentsChanged();
         }
         return stack;
+    }
+
+    @Nonnull
+    @Override
+    public FluidResult drainItem(int maxDrain, FluidAction action)
+    {
+        return FluidResult.of(drainBlock(maxDrain, action));
     }
 
     protected void onContentsChanged()
@@ -219,5 +270,4 @@ public class FluidTank implements IFluidHandler, IFluidTank {
     {
         return Math.max(0, capacity - fluid.getAmount());
     }
-
 }
